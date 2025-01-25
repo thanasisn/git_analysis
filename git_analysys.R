@@ -93,10 +93,16 @@ folders <- c(
   "~/CODE/fi_analysis/",
   "~/CODE/git_analysis/",
   "~/CODE/nixos/",
+  "~/NOTES/",
+  "~/BASH/",
+  "~/.dot_files/",
+  "~/.dotfiles//",
   "~/PANDOC/thanasisnsite/",
   "~/MANUSCRIPTS/01_2022_sdr_trends/",
   "~/MANUSCRIPTS/02_2024_enhancement/",
-  "~/MANUSCRIPTS/03_thesis/"
+  "~/MANUSCRIPTS/03_thesis/",
+  "~/MANUSCRIPTS/presentations/",
+  NULL
 )
 allgit <- data.table()
 
