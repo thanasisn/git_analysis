@@ -90,6 +90,10 @@ library(ggplot2,    warn.conflicts = FALSE, quietly = TRUE)
 folders <- c(
   "~/BBand_LAP/",
   "~/CODE/",
+  "~/CODE/fi_analysis/",
+  "~/CODE/git_analysis/",
+  "~/CODE/nixos/",
+  "~/PANDOC/thanasisnsite/",
   "~/MANUSCRIPTS/01_2022_sdr_trends/",
   "~/MANUSCRIPTS/02_2024_enhancement/",
   "~/MANUSCRIPTS/03_thesis/"
@@ -136,20 +140,24 @@ for (repodir in folders) {
 
 
 
-allgit[, .(N = .N) , by = .(date = as.Date(datetime), repo = repo)] |>
+c <- allgit[, .(N = .N) , by = .(date = as.Date(datetime), repo = repo)] |>
   ggplot() +
   geom_point(aes(x = date, y = N, colour = repo)) +
-  labs(title = basename(repodir))
+  labs(title = "Commits by day")
+show(c)
 
-ww <- allgit[, .(N = .N) , by = .(year = year(datetime), week = week(datetime), repo = repo)]
+w <- allgit[, .(N = .N) , by = .(date = as.Date(as.numeric(as.Date(allgit$datetime))%/%7 * 7, origin = origin), repo = repo)] |>
+  ggplot() +
+  geom_point(aes(x = date, y = N, colour = repo)) +
+  labs(title = "Commits by week")
+show(w)
 
+allgit[, .(N = .N) , by = .(file, repo = repo)] |> arrange(N) |> tail(n = 15)
 
-as.Date(paste(2014, df$Week, 1, sep="-"), "%Y-%U-%u")
+allgit[, .(N = .N) , by = .(repo = repo)]
 
-ww[, as.Date(paste(year, week, 1, sep="-"), "%Y-%U-%u")]
 
 stop()
-
 
 history_logs <- history_logs %>%
   mutate(parents = str_split(parents, " "))
