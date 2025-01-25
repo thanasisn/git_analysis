@@ -67,7 +67,7 @@ tic <- Sys.time()
 Script.Name  <- "~/CODE/git_analysis/git_analysys.R"
 
 if (!interactive()) {
-  pdf( file = paste0("~/CODE/git_analysis/RUNTIME/",   basename(sub("\\.R$", ".pdf", Script.Name))))
+  pdf(file = paste0("~/CODE/git_analysis/RUNTIME/", basename(sub("\\.R$", ".pdf", Script.Name))))
 }
 
 
@@ -79,49 +79,74 @@ library(forcats,    warn.conflicts = FALSE, quietly = TRUE)
 library(tidyverse,  warn.conflicts = FALSE, quietly = TRUE)
 library(tidygraph,  warn.conflicts = FALSE, quietly = TRUE)
 library(ggraph,     warn.conflicts = FALSE, quietly = TRUE)
+library(lubridate,  warn.conflicts = FALSE, quietly = TRUE)
 library(tidytext,   warn.conflicts = FALSE, quietly = TRUE)
+library(ggplot2,    warn.conflicts = FALSE, quietly = TRUE)
 
 
 #+ include=T, echo=F, results="asis"
 ##  Variables  -----------------------------------------------------------------
 
-repodir <- "~/BBand_LAP/"
+folders <- c(
+  "~/BBand_LAP/",
+  "~/CODE/",
+  "~/MANUSCRIPTS/01_2022_sdr_trends/",
+  "~/MANUSCRIPTS/02_2024_enhancement/",
+  "~/MANUSCRIPTS/03_thesis/"
+)
+allgit <- data.table()
 
-## get data from git log
-log_format_options <- c(datetime = "cd", commit = "h", parents = "p", author = "an", subject = "s")
-option_delim <- "\t"
-log_format   <- glue("%{log_format_options}") %>% glue_collapse(option_delim)
-log_options  <- glue('--pretty=format:"{log_format}" --date=format:"%Y-%m-%d %H:%M:%S" --name-status')
-log_cmd      <- glue('git -C {repodir} log {log_options}')
-lines        <- system(log_cmd, intern = TRUE)
+for (repodir in folders) {
 
-## separete commits from file lists
-breaks <- which(grepl("^[[:space:]]*$", lines))
-start  <- c(1, breaks + 1)
-end    <- c(breaks, length(lines))
-comits <- lines[start]
+  ## get data from git log
+  log_format_options <- c(datetime = "cd", commit = "h", parents = "p", author = "an", subject = "s")
+  option_delim <- "\t"
+  log_format   <- glue("%{log_format_options}") %>% glue_collapse(option_delim)
+  log_options  <- glue('--pretty=format:"{log_format}" --date=format:"%Y-%m-%d %H:%M:%S" --name-status')
+  log_cmd      <- glue('git -C {repodir} log {log_options}')
+  lines        <- system(log_cmd, intern = TRUE)
 
-tt     <- data.frame(start = start, end = end)
-tt$ddd <- apply(tt, 1, function(x) (lines[c((x[1]+1):(x[2]-1))]), simplify = T  )
+  ## separete commits from file lists
+  breaks <- which(grepl("^[[:space:]]*$", lines))
+  start  <- c(1, breaks + 1)
+  end    <- c(breaks, length(lines))
+  comits <- lines[start]
 
-history_logs <- comits %>%
-  str_split_fixed(option_delim, length(log_format_options)) %>%
-  as_tibble() %>%
-  setNames(names(log_format_options))
+  tt     <- data.frame(start = start, end = end)
+  tt$ddd <- apply(tt, 1, function(x) (lines[c((x[1]+1):(x[2]-1))]), simplify = T  )
 
-## align files with commits
-history_logs$files <- tt$ddd
-history_logs       <- unnest(history_logs, files)
+  history_logs <- comits %>%
+    str_split_fixed(option_delim, length(log_format_options)) %>%
+    as_tibble() %>%
+    setNames(names(log_format_options))
+
+  ## align all files with commits
+  history_logs$files <- tt$ddd
+  history_logs       <- unnest(history_logs, files)
+
+  ## split file and status
+  history_logs <- history_logs |>
+    separate(col = files, into = c("file_status", "file"), sep = "\t")
+
+  history_logs <- data.table(history_logs)
+
+  history_logs$repo <- basename(repodir)
+  allgit            <- rbind(allgit, history_logs)
+}
 
 
-test <- history_logs |> separate(col = files, into = c("file_status", "file"), sep = "\t")
+
+allgit[, .(N = .N) , by = .(date = as.Date(datetime), repo = repo)] |>
+  ggplot() +
+  geom_point(aes(x = date, y = N, colour = repo)) +
+  labs(title = basename(repodir))
+
+ww <- allgit[, .(N = .N) , by = .(year = year(datetime), week = week(datetime), repo = repo)]
 
 
-table(test$file_status)
-table(test$file)
+as.Date(paste(2014, df$Week, 1, sep="-"), "%Y-%U-%u")
 
-
-history_logs |> separate_wider_regex(files, patterns = c(files ="\\t"))
+ww[, as.Date(paste(year, week, 1, sep="-"), "%Y-%U-%u")]
 
 stop()
 
