@@ -87,59 +87,43 @@ library(tidytext,   warn.conflicts = FALSE, quietly = TRUE)
 
 repodir <- "~/BBand_LAP/"
 
-system(glue('git -C {repodir} log -3'))
-
+## get data from git log
 log_format_options <- c(datetime = "cd", commit = "h", parents = "p", author = "an", subject = "s")
 option_delim <- "\t"
 log_format   <- glue("%{log_format_options}") %>% glue_collapse(option_delim)
 log_options  <- glue('--pretty=format:"{log_format}" --date=format:"%Y-%m-%d %H:%M:%S" --name-status')
 log_cmd      <- glue('git -C {repodir} log {log_options}')
-log_cmd
+lines        <- system(log_cmd, intern = TRUE)
 
-lines  <- system(log_cmd, intern = TRUE)
+## separete commits from file lists
 breaks <- which(grepl("^[[:space:]]*$", lines))
+start  <- c(1, breaks + 1)
+end    <- c(breaks, length(lines))
+comits <- lines[start]
 
-comits <- lines[c(1, (breaks[-1]+1))]
-
-start <- c(1, (breaks+1))
-end   <- c(breaks, length(lines))
-
-tt <- data.frame(start = start, end = end)
-
-lapply(tt, function(x) lines[x[,1]:x[,2]]  )
-apply(tt, 1, function(x) (lines[c((x[1]+1):(x[2]-1))]), simplify = T  )
-
+tt     <- data.frame(start = start, end = end)
 tt$ddd <- apply(tt, 1, function(x) (lines[c((x[1]+1):(x[2]-1))]), simplify = T  )
 
-length(breaks[-1])
-length(breaks)
-
-tail(breaks)
-
-(tail(lines))
-
-tail(comits)
-head(comits)
-
-
-
-
-
-log_format_options <- c(datetime = "cd", commit = "h", parents = "p", author = "an", subject = "s")
-option_delim <- "\t"
-log_format   <- glue("%{log_format_options}") %>% glue_collapse(option_delim)
-log_options  <- glue('--pretty=format:"{log_format}" --date=format:"%Y-%m-%d %H:%M:%S"')
-log_cmd      <- glue('git -C {repodir} log {log_options}')
-log_cmd
-
-
-
-system(glue('{log_cmd} -3'))
-
-history_logs <- system(log_cmd, intern = TRUE) %>%
+history_logs <- comits %>%
   str_split_fixed(option_delim, length(log_format_options)) %>%
   as_tibble() %>%
   setNames(names(log_format_options))
+
+## align files with commits
+history_logs$files <- tt$ddd
+history_logs       <- unnest(history_logs, files)
+
+
+test <- history_logs |> separate(col = files, into = c("file_status", "file"), sep = "\t")
+
+
+table(test$file_status)
+table(test$file)
+
+
+history_logs |> separate_wider_regex(files, patterns = c(files ="\\t"))
+
+stop()
 
 
 history_logs <- history_logs %>%
