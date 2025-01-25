@@ -37,20 +37,10 @@
 #'
 #' ---
 
-
-
-
-# https://www.r-bloggers.com/2018/03/guide-to-tidy-git-analysis/
-
-
 #+ include=F
-
 #'
-#' **QCRad T03**
+#' https://www.r-bloggers.com/2018/03/guide-to-tidy-git-analysis/
 #'
-#' **Details and source code: [`github.com/thanasisn/BBand_LAP`](https://github.com/thanasisn/BBand_LAP)**
-#'
-#' **Data display: [`thanasisn.github.io`](https://thanasisn.github.io/)**
 #'
 
 #+ include=F
@@ -83,10 +73,10 @@ if (!interactive()) {
 
 ## __ Load libraries  ----------------------------------------------------------
 library(data.table, warn.conflicts = FALSE, quietly = TRUE)
-library(dplyr,      warn.conflicts = FALSE, quietly = TRUE)
 library(glue,       warn.conflicts = FALSE, quietly = TRUE)
 library(stringr,    warn.conflicts = FALSE, quietly = TRUE)
 library(forcats,    warn.conflicts = FALSE, quietly = TRUE)
+library(tidyverse,  warn.conflicts = FALSE, quietly = TRUE)
 library(tidygraph,  warn.conflicts = FALSE, quietly = TRUE)
 library(ggraph,     warn.conflicts = FALSE, quietly = TRUE)
 library(tidytext,   warn.conflicts = FALSE, quietly = TRUE)
@@ -101,10 +91,48 @@ system(glue('git -C {repodir} log -3'))
 
 log_format_options <- c(datetime = "cd", commit = "h", parents = "p", author = "an", subject = "s")
 option_delim <- "\t"
-log_format   <- glue("%{log_format_options}") %>% collapse(option_delim)
+log_format   <- glue("%{log_format_options}") %>% glue_collapse(option_delim)
+log_options  <- glue('--pretty=format:"{log_format}" --date=format:"%Y-%m-%d %H:%M:%S" --name-status')
+log_cmd      <- glue('git -C {repodir} log {log_options}')
+log_cmd
+
+lines  <- system(log_cmd, intern = TRUE)
+breaks <- which(grepl("^[[:space:]]*$", lines))
+
+comits <- lines[c(1, (breaks[-1]+1))]
+
+start <- c(1, (breaks+1))
+end   <- c(breaks, length(lines))
+
+tt <- data.frame(start = start, end = end)
+
+lapply(tt, function(x) lines[x[,1]:x[,2]]  )
+apply(tt, 1, function(x) (lines[c((x[1]+1):(x[2]-1))]), simplify = T  )
+
+tt$ddd <- apply(tt, 1, function(x) (lines[c((x[1]+1):(x[2]-1))]), simplify = T  )
+
+length(breaks[-1])
+length(breaks)
+
+tail(breaks)
+
+(tail(lines))
+
+tail(comits)
+head(comits)
+
+
+
+
+
+log_format_options <- c(datetime = "cd", commit = "h", parents = "p", author = "an", subject = "s")
+option_delim <- "\t"
+log_format   <- glue("%{log_format_options}") %>% glue_collapse(option_delim)
 log_options  <- glue('--pretty=format:"{log_format}" --date=format:"%Y-%m-%d %H:%M:%S"')
 log_cmd      <- glue('git -C {repodir} log {log_options}')
 log_cmd
+
+
 
 system(glue('{log_cmd} -3'))
 
@@ -116,7 +144,6 @@ history_logs <- system(log_cmd, intern = TRUE) %>%
 
 history_logs <- history_logs %>%
   mutate(parents = str_split(parents, " "))
-
 
 # Start with NA
 history_logs <- history_logs %>% mutate(branch = NA_integer_)
@@ -207,29 +234,6 @@ edges <- history_logs %>%
 git_graph <- tbl_graph(nodes = nodes, edges = edges, directed = TRUE)
 
 git_graph
-#> # A tbl_graph: 3946 nodes and 4371 edges
-#> #
-#> # A directed acyclic simple graph with 1 component
-#> #
-#> # Node Data: 3,946 x 5 (active)
-#>   datetime            commit   author           subject             branch
-#>   <chr>               <fct>    <chr>            <chr>                <int>
-#> 1 2011-07-19 22:40:33 002e510d Kohske Takahashi remove style param…      4
-#> 2 2008-07-05 20:00:50 0036ad7f Hadley Wickham   HAcks to get tile …      1
-#> 3 2010-02-05 10:25:26 0072cf4c Hadley Wickham   Fix bug with empty…      1
-#> 4 2013-12-02 13:51:05 008018cc Josef Fruehwald  added stat_ellipse       9
-#> 5 2010-12-23 10:22:36 00821913 Hadley Wickham   Fix doc name             1
-#> 6 2011-12-23 06:24:28 008312c0 Hadley Wickham   Merge pull request…      1
-#> # ... with 3,940 more rows
-#> #
-#> # Edge Data: 4,371 x 2
-#>    from    to
-#>   <int> <int>
-#> 1  3070   968
-#> 2  1071   968
-#> 3  3370  1071
-#> # ... with 4,368 more rows
-
 
 
 git_graph %>%
@@ -238,7 +242,6 @@ git_graph %>%
   geom_node_point(aes(color = factor(branch)), alpha = .3) +
   theme_graph() +
   theme(legend.position = "none")
-#> Using `nicely` as default layout
 
 ggraph_git <- . %>%
   # Set node x,y coordinates
@@ -336,20 +339,6 @@ history_logs %>%
   filter(word1 == "fix") %>%
   anti_join(stop_words, by = c("word2" = "word")) %>%
   count(word2, sort = TRUE)
-#> # A tibble: 223 x 2
-#>    word2             n
-#>    <chr>         <int>
-#>  1 bug              57
-#>  2 typo             37
-#>  3 geom             11
-#>  4 guides           11
-#>  5 bugs              7
-#>  6 doc               7
-#>  7 boxplot           6
-#>  8 axis              5
-#>  9 documentation     5
-#> 10 dumb              5
-#> # ... with 213 more rows
 
 
 #+ include=T, echo=F, results="asis"
