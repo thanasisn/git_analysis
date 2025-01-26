@@ -108,7 +108,9 @@ folders <- c(
   "~/PANDOC/thanasisnsite/",
   NULL
 )
-allgit <- data.table()
+
+allgit   <- data.table()
+commitsl <- data.table()
 
 for (repodir in folders) {
 
@@ -120,7 +122,7 @@ for (repodir in folders) {
   log_cmd      <- glue('git -C {repodir} log {log_options}')
   lines        <- system(log_cmd, intern = TRUE)
 
-  ## separete commits from file lists
+  ## separate commits from file lists
   breaks <- which(grepl("^[[:space:]]*$", lines))
   start  <- c(1, breaks + 1)
   end    <- c(breaks, length(lines))
@@ -133,6 +135,10 @@ for (repodir in folders) {
     str_split_fixed(option_delim, length(log_format_options)) %>%
     as_tibble() %>%
     setNames(names(log_format_options))
+
+  history_logs$repo <- basename(repodir)
+  commitsl  <- rbind(commitsl, history_logs)
+
 
   ## align all files with commits
   history_logs$files <- tt$ddd
@@ -166,6 +172,7 @@ allgit[, .(N = .N) , by = .(file, repo = repo)] |> arrange(N) |> tail(n = 15)
 
 allgit[, .(N = .N) , by = .(repo = repo)]
 
+commitsl[, .N, by = repo] |> arrange(N)
 
 stop()
 
