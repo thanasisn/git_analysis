@@ -91,14 +91,14 @@ folders <- c(
   # "~/.dot_files/",
   # "~/.dotfiles/",
   # "~/BASH/",
-  "~/BBand_LAP/",
+  # "~/BBand_LAP/",
   # "~/CODE/",
   # "~/CODE/Clothes_drying//",
   # "~/CODE/deploy/",
   # "~/CODE/fi_analysis/",
   # "~/CODE/git_analysis/",
   # "~/CODE/nixos/",
-  # "~/MANUSCRIPTS/01_2022_sdr_trends/",
+  "~/MANUSCRIPTS/01_2022_sdr_trends/",
   # "~/MANUSCRIPTS/02_2024_enhancement/",
   # "~/MANUSCRIPTS/03_thesis/",
   # "~/MANUSCRIPTS/presentations/",
@@ -152,6 +152,10 @@ for (repodir in folders) {
 
   history_logs$repo <- basename(repodir)
   allgit            <- rbind(allgit, history_logs)
+
+
+  stop()
+
 }
 
 
@@ -174,7 +178,19 @@ allgit[, .(N = .N) , by = .(repo = repo)]
 
 commitsl[, .N, by = repo] |> arrange(N)
 
+
+
 stop()
+
+
+
+
+
+
+
+
+
+
 
 history_logs <- history_logs %>%
   mutate(parents = str_split(parents, " "))
@@ -224,12 +240,12 @@ history_logs %>%
   count(author, sort = TRUE)
 
 
-istory_logs <- history_logs %>%
-  mutate(author = case_when(
-    str_detect(tolower(author), "hadley") ~ "Hadley Wickham",
-    str_detect(tolower(author), "kohske takahashi") ~ "Kohske Takahashi",
-    TRUE ~ str_to_title(author)
-  ))
+# istory_logs <- history_logs %>%
+#   mutate(author = case_when(
+#     str_detect(tolower(author), "hadley") ~ "Hadley Wickham",
+#     str_detect(tolower(author), "kohske takahashi") ~ "Kohske Takahashi",
+#     TRUE ~ str_to_title(author)
+#   ))
 
 history_logs %>%
   count(author) %>%
@@ -266,9 +282,6 @@ edges <- history_logs %>%
 
 # Create tidy directed graph object
 git_graph <- tbl_graph(nodes = nodes, edges = edges, directed = TRUE)
-
-git_graph
-
 
 git_graph %>%
   ggraph() +
