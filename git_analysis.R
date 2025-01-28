@@ -91,7 +91,7 @@ panderOptions('table.alignment.default', 'left')
 #+ include=T, echo=F, results="asis", warnings=F
 ##  Variables  -----------------------------------------------------------------
 
-folders <- c(
+folders <- sort(c(
   "~/.dot_files/",
   "~/.dotfiles/",
   "~/BASH/",
@@ -112,7 +112,7 @@ folders <- c(
   "~/PANDOC/Libradtran_guide/",
   "~/PANDOC/thanasisnsite/",
   NULL
-)
+))
 
 allgit   <- data.table()
 commitsl <- data.table()
