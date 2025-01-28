@@ -19,6 +19,11 @@
 #' - \captionsetup{font=small}
 #'
 #' output:
+#'   html_document:
+#'     toc:        true
+#'     fig_width:  7.5
+#'     fig_height: 5
+#'
 #'   bookdown::pdf_document2:
 #'     number_sections:  no
 #'     fig_caption:      no
@@ -28,10 +33,6 @@
 #'     toc_depth:        4
 #'     fig_width:        8
 #'     fig_height:       5
-#'   html_document:
-#'     toc:        true
-#'     fig_width:  7.5
-#'     fig_height: 5
 #'
 #' date: "`r format(Sys.time(), '%F')`"
 #'
@@ -49,6 +50,7 @@ knitr::opts_chunk$set(comment   = ""      )
 knitr::opts_chunk$set(dev       = "png"   )
 knitr::opts_chunk$set(out.width = "100%"  )
 knitr::opts_chunk$set(fig.align = "center")
+knitr::opts_chunk$set(warning   = FALSE   )
 knitr::opts_chunk$set(fig.cap   = " empty caption ")
 knitr::opts_chunk$set(fig.pos   = '!h'    )
 knitr::opts_chunk$set(tidy = TRUE,
@@ -82,30 +84,32 @@ library(ggraph,     warn.conflicts = FALSE, quietly = TRUE)
 library(lubridate,  warn.conflicts = FALSE, quietly = TRUE)
 library(tidytext,   warn.conflicts = FALSE, quietly = TRUE)
 library(ggplot2,    warn.conflicts = FALSE, quietly = TRUE)
+library(pander,     warn.conflicts = FALSE, quietly = TRUE)
 
+panderOptions('table.alignment.default', 'left')
 
-#+ include=T, echo=F, results="asis"
+#+ include=T, echo=F, results="asis", warnings=F
 ##  Variables  -----------------------------------------------------------------
 
 folders <- c(
-  # "~/.dot_files/",
-  # "~/.dotfiles/",
-  # "~/BASH/",
-  # "~/BBand_LAP/",
-  # "~/CODE/",
-  # "~/CODE/Clothes_drying//",
-  # "~/CODE/deploy/",
-  # "~/CODE/fi_analysis/",
-  # "~/CODE/git_analysis/",
-  # "~/CODE/nixos/",
+  "~/.dot_files/",
+  "~/.dotfiles/",
+  "~/BASH/",
+  "~/BBand_LAP/",
+  "~/CODE/",
+  "~/CODE/Clothes_drying/",
+  "~/CODE/deploy/",
+  "~/CODE/fi_analysis/",
+  "~/CODE/git_analysis/",
+  "~/CODE/nixos/",
   "~/MANUSCRIPTS/01_2022_sdr_trends/",
-  # "~/MANUSCRIPTS/02_2024_enhancement/",
-  # "~/MANUSCRIPTS/03_thesis/",
-  # "~/MANUSCRIPTS/presentations/",
-  # "~/NOTES/",
-  # "~/PANDOC/CHP1_measurements_guide/",
-  # "~/PANDOC/Libradtran_guide/",
-  # "~/PANDOC/thanasisnsite/",
+  "~/MANUSCRIPTS/02_2024_enhancement/",
+  "~/MANUSCRIPTS/03_thesis/",
+  "~/MANUSCRIPTS/presentations/",
+  "~/NOTES/",
+  "~/PANDOC/CHP1_measurements_guide/",
+  "~/PANDOC/Libradtran_guide/",
+  "~/PANDOC/thanasisnsite/",
   NULL
 )
 
@@ -113,6 +117,10 @@ allgit   <- data.table()
 commitsl <- data.table()
 
 for (repodir in folders) {
+
+  if (!dir.exists(repodir)) next()
+
+  cat(paste("## ", repodir, "\n\n"))
 
   ## get data from git log
   log_format_options <- c(datetime = "cd", commit = "h", parents = "p", author = "an", subject = "s")
@@ -160,17 +168,28 @@ for (repodir in folders) {
     labs(title = paste(basename(repodir), "commits by day"))
   show(c)
 
-  w <- history_logs[, .(N = .N) , by = .(date = as.Date(as.numeric(as.Date(allgit$datetime))%/%7 * 7, origin = origin))] |>
+
+  w <- history_logs[, .(N = .N) , by = .(date = as.Date(as.numeric(as.Date(datetime))%/%7 * 7, origin = origin))] |>
     ggplot() +
     geom_point(aes(x = date, y = N)) +
-    labs(title = paste(basename(repodir), "commits by day"))
+    labs(title = paste(basename(repodir), "commits by week"))
   show(w)
 
 
-  stop()
+  cat(pander(
+    history_logs[, .(N = .N) , by = .(file)] |> arrange(N) |> tail(n = 20),
+    caption = "Most commited files"
+  ))
+
+  cat(pander(
+    history_logs[, .N, by = repo] |> arrange(N),
+    caption = "Number of commits"
+  ))
 
 }
 
+
+# cat(paste("## All repos\n\n"))
 
 
 c <- allgit[, .(N = .N) , by = .(date = as.Date(datetime), repo = repo)] |>
@@ -185,22 +204,28 @@ w <- allgit[, .(N = .N) , by = .(date = as.Date(as.numeric(as.Date(allgit$dateti
   labs(title = "Commits by week")
 show(w)
 
-allgit[, .(N = .N) , by = .(file, repo = repo)] |> arrange(N) |> tail(n = 15)
+pander(
+  allgit[, .(N = .N) , by = .(file, repo = repo)] |> arrange(N) |> tail(n = 40),
+  caption = "Most commited files"
+)
 
-allgit[, .(N = .N) , by = .(repo = repo)]
+pander(
+  allgit[, .(N = .N) , by = .(repo = repo)]
+)
 
-commitsl[, .N, by = repo] |> arrange(N)
-
-
-
-
-
-
+pander(
+  commitsl[, .N, by = repo] |> arrange(N)
+)
 
 
 
 
-#
+
+
+
+
+
+
 #
 #
 # history_logs <- history_logs %>%
