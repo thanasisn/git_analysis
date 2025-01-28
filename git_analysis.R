@@ -91,7 +91,7 @@ panderOptions('table.alignment.default', 'left')
 #+ include=T, echo=F, results="asis", warnings=F
 ##  Variables  -----------------------------------------------------------------
 
-folders <- sort(c(
+folders <- unique(sort(c(
   "~/.dot_files/",
   "~/.dotfiles/",
   "~/BASH/",
@@ -112,7 +112,7 @@ folders <- sort(c(
   "~/PANDOC/Libradtran_guide/",
   "~/PANDOC/thanasisnsite/",
   NULL
-))
+)))
 
 allgit   <- data.table()
 commitsl <- data.table()
@@ -165,14 +165,14 @@ for (repodir in folders) {
 
   c <- history_logs[, .(N = .N) , by = .(date = as.Date(datetime))] |>
     ggplot() +
-    geom_point(aes(x = date, y = N)) +
+    geom_col(aes(x = date, y = N)) +
     labs(title = paste(basename(repodir), "commits by day"))
   show(c)
 
 
   w <- history_logs[, .(N = .N) , by = .(date = as.Date(as.numeric(as.Date(datetime))%/%7 * 7, origin = origin))] |>
     ggplot() +
-    geom_point(aes(x = date, y = N)) +
+    geom_col(aes(x = date, y = N)) +
     labs(title = paste(basename(repodir), "commits by week"))
   show(w)
 
@@ -196,15 +196,22 @@ for (repodir in folders) {
 
 c <- allgit[, .(N = .N) , by = .(date = as.Date(datetime), repo = repo)] |>
   ggplot() +
-  geom_point(aes(x = date, y = N, colour = repo)) +
+  geom_col(aes(x = date, y = N, colour = repo)) +
   labs(title = "Commits by day")
 show(c)
 
+# w <- allgit[, .(N = .N) , by = .(date = as.Date(as.numeric(as.Date(allgit$datetime))%/%7 * 7, origin = origin), repo = repo)] |>
+#   ggplot() +
+#   geom_point(aes(x = date, y = N, colour = repo)) +
+#   labs(title = "Commits by week")
+# show(w)
+
 w <- allgit[, .(N = .N) , by = .(date = as.Date(as.numeric(as.Date(allgit$datetime))%/%7 * 7, origin = origin), repo = repo)] |>
   ggplot() +
-  geom_point(aes(x = date, y = N, colour = repo)) +
+  geom_col(aes(x = date, y = N, colour = repo)) +
   labs(title = "Commits by week")
 show(w)
+
 
 pander(
   allgit[, .(N = .N) , by = .(file, repo = repo)] |> arrange(N) |> tail(n = 40),
