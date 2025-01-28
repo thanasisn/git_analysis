@@ -95,6 +95,7 @@ folders <- c(
   "~/.dot_files/",
   "~/.dotfiles/",
   "~/BASH/",
+  "~/Aerosols/",
   "~/BBand_LAP/",
   "~/CODE/",
   "~/CODE/Clothes_drying/",
@@ -145,7 +146,7 @@ for (repodir in folders) {
     setNames(names(log_format_options))
 
   history_logs$repo <- basename(repodir)
-  commitsl  <- rbind(commitsl, history_logs)
+  commitsl          <- rbind(commitsl, history_logs)
 
 
   ## align all files with commits
@@ -154,9 +155,9 @@ for (repodir in folders) {
 
   ## split file and status
   history_logs <- history_logs |>
-    separate(col = files, into = c("file_status", "file"), sep = "\t")
-
-  history_logs <- data.table(history_logs)
+    separate(col = files, into = c("file_status", "file"), sep = "\t") |>
+    data.table()
+  history_logs$file_exists <- file.exists(paste0(repodir, "/", history_logs$file))
 
   history_logs$repo <- basename(repodir)
   allgit            <- rbind(allgit, history_logs)
@@ -175,9 +176,10 @@ for (repodir in folders) {
     labs(title = paste(basename(repodir), "commits by week"))
   show(w)
 
-
   cat(pander(
-    history_logs[, .(N = .N) , by = .(file)] |> arrange(N) |> tail(n = 20),
+    history_logs[, .(N      = .N,
+                     exists = unique(file_exists)), by = .(file)] |>
+      arrange(N) |> tail(n = 30),
     caption = "Most commited files"
   ))
 
